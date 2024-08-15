@@ -1,12 +1,18 @@
-use axum::{extract::State, http::StatusCode, routing::get, Json, Router};
+use axum::Router;
 use dotenv::dotenv;
-use models::User;
-use serde::Deserialize;
-use sqlx::{postgres::PgPoolOptions, query, query_as, PgPool};
+use jwt_simple::prelude::*;
+use sqlx::{postgres::PgPoolOptions, PgPool};
+use tower_cookies::CookieManagerLayer;
 
 mod error;
 mod models;
 mod routes;
+
+#[derive(Clone)]
+struct AppState {
+    pool: PgPool,
+    jwt_key: HS256Key,
+}
 
 #[tokio::main]
 async fn main() {
@@ -20,10 +26,16 @@ async fn main() {
         .await
         .unwrap();
 
+    //jwt key
+    let jwt_key = HS256Key::generate();
+
+    let state = AppState { pool, jwt_key };
+
     // routing
     let app = Router::new()
         .merge(routes::login::routes())
-        .with_state(pool);
+        .layer(CookieManagerLayer::new())
+        .with_state(state);
 
     // starting server
 

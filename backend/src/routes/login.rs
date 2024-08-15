@@ -1,17 +1,23 @@
-use std::borrow::Borrow;
-
 use axum::{extract::State, routing::post, Json, Router};
+use jwt_simple::{
+    claims::Claims,
+    prelude::{Duration, MACLike},
+};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use sqlx::{query, query_as, PgPool, Pool, Postgres};
+use sqlx::query_as;
+use tower_cookies::{Cookie, Cookies};
 use tracing::info;
 
 use crate::{
     error::{Error, Result},
     models::User,
+    AppState,
 };
 
-pub fn routes() -> Router<Pool<Postgres>> {
+use super::{JWTContent, AUTH_TOKEN};
+
+pub fn routes() -> Router<AppState> {
     Router::new().route("/api/login", post(login_post))
 }
 
@@ -22,7 +28,8 @@ struct LoginPayload {
 }
 
 async fn login_post(
-    State(pool): State<PgPool>,
+    State(AppState { pool, jwt_key }): State<AppState>,
+    cookies: Cookies,
     payload: Json<LoginPayload>,
 ) -> Result<Json<Value>> {
     let username = payload.username.to_owned();
@@ -34,6 +41,14 @@ async fn login_post(
         info!("Bad password!");
         return Err(Error::LoginFail);
     }
+
+    let jwt_content = JWTContent { id: result.id };
+
+    let claims = Claims::with_custom_claims(jwt_content, Duration::from_mins(20));
+    let token = jwt_key.authenticate(claims).map_err(|_| Error::LoginFail)?;
+
+    cookies.add(Cookie::new(AUTH_TOKEN, token));
+
     Ok(Json(json!({
         "success": true
     })))
