@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * from users",
+  "query": "SELECT * FROM users WHERE username = $1",
   "describe": {
     "columns": [
       {
@@ -20,7 +20,9 @@
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Text"
+      ]
     },
     "nullable": [
       false,
@@ -28,5 +30,5 @@
       false
     ]
   },
-  "hash": "d4de8f5f804f721ffee589ea2a4cfef8500426de1c04d2186382af93f3d002a3"
+  "hash": "606364c79e0990deb07dfbe6c32b3d302d083ec5333f3a5ce04113c38a041100"
 }
