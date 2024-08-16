@@ -10,6 +10,8 @@ pub type Result<T> = core::result::Result<T, Error>;
 pub enum Error {
     LoginFail,
     SQLFail,
+    AuthFailMissingCookie,
+    AuthFailBadToken,
 }
 
 impl IntoResponse for Error {

@@ -17,7 +17,7 @@ pub async fn create_note(note_fc: NoteForCreate, session: Session, pool: PgPool)
     let result = query_as!(
         Note,
         "INSERT INTO notes (creator_id, title, content, time_created, time_edited) VALUES ($1, $2, $3, $4, $4) RETURNING *",
-        session.id,
+        session.id(),
         note_fc.title,
         note_fc.content,
         time_created,
@@ -54,7 +54,7 @@ pub async fn get_notes(session: Session, pool: PgPool) -> Result<Vec<Note>> {
     let result = query_as!(
         Note,
         "SELECT * FROM notes WHERE creator_id = $1",
-        session.id
+        session.id()
     )
     .fetch_all(&pool)
     .await
