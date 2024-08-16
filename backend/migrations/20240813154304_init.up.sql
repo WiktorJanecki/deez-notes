@@ -8,3 +8,12 @@ CREATE TABLE users(
 );
 
 INSERT INTO users(username, password) VALUES ('zbigniew', '123');
+
+CREATE TABLE notes(
+    id SERIAL PRIMARY KEY,
+    creator_id INTEGER NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,   
+    time_created BIGINT NOT NULL,
+    time_edited BIGINT NOT NULL
+);

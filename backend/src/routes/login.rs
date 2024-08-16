@@ -18,7 +18,7 @@ use crate::{
 use super::{JWTContent, AUTH_TOKEN};
 
 pub fn routes() -> Router<AppState> {
-    Router::new().route("/api/login", post(login_post))
+    Router::new().route("/login", post(login_post))
 }
 
 #[derive(Deserialize)]

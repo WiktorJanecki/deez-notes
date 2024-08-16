@@ -4,9 +4,11 @@ use jwt_simple::prelude::*;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use tower_cookies::CookieManagerLayer;
 
+mod controllers;
 mod error;
 mod models;
 mod routes;
+mod session;
 
 #[derive(Clone)]
 struct AppState {
@@ -34,6 +36,7 @@ async fn main() {
     // routing
     let app = Router::new()
         .merge(routes::login::routes())
+        .nest("/api", routes::notes::routes())
         .layer(CookieManagerLayer::new())
         .with_state(state);
 
