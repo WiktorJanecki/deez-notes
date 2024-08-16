@@ -39,7 +39,7 @@ where
         let cookie = cookies
             .get(AUTH_TOKEN)
             .ok_or(Error::AuthFailMissingCookie)?;
-        let state = AppState::from_ref(&state);
+        let state = AppState::from_ref(state);
         let token = cookie.value();
 
         let token_claims = state

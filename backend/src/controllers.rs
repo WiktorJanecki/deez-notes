@@ -1,7 +1,6 @@
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
-use jwt_simple::prelude::UnixTimeStamp;
-use sqlx::{query, query_as, Execute, PgPool, QueryBuilder};
+use sqlx::{query, query_as, PgPool};
 
 use crate::{
     error::{Error, Result},
@@ -28,26 +27,35 @@ pub async fn create_note(note_fc: NoteForCreate, session: Session, pool: PgPool)
 pub async fn change_note(
     id: i32,
     note_fe: NoteForEdit,
-    _session: Session,
+    session: Session,
     pool: PgPool,
 ) -> Result<Note> {
     let time_edited: i64 = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("machine time backwards")
         .as_secs() as i64;
-    let mut query = QueryBuilder::new("UPDATE notes SET");
-    if let Some(title) = note_fe.title {
-        query.push("title = ").push_bind(title);
-    }
-    if let Some(content) = note_fe.content {
-        query.push("content= ").push_bind(content);
-    }
-    query.push("WHERE id = ").push_bind(id).push("RETURNING *");
-    let result: Note = query
-        .build_query_as()
-        .fetch_one(&pool)
-        .await
-        .map_err(|_| Error::SQLFail)?;
+
+    let result = query_as!(
+        Note,
+        "
+            UPDATE notes SET
+                time_edited = $1,
+                title = COALESCE($2, title),
+                content = COALESCE($3, content)
+            WHERE 
+                creator_id = $4 AND id = $5
+            RETURNING *
+        ",
+        time_edited,
+        note_fe.title,
+        note_fe.content,
+        session.id(),
+        id
+    )
+    .fetch_one(&pool)
+    .await
+    .map_err(|_| Error::SQLFail)?;
+
     Ok(result)
 }
 pub async fn get_notes(session: Session, pool: PgPool) -> Result<Vec<Note>> {
@@ -62,10 +70,24 @@ pub async fn get_notes(session: Session, pool: PgPool) -> Result<Vec<Note>> {
     Ok(result)
 }
 
-pub async fn get_note(id: i32, _session: Session, pool: PgPool) -> Result<Note> {
+pub async fn get_note(id: i32, session: Session, pool: PgPool) -> Result<Note> {
     let result = query_as!(Note, "SELECT * FROM notes WHERE id = $1", id)
         .fetch_one(&pool)
         .await
         .map_err(|_| Error::SQLFail)?;
+    if result.creator_id != session.id() {
+        return Err(Error::AuthNoAccess);
+    }
     Ok(result)
+}
+pub async fn delete_note(id: i32, session: Session, pool: PgPool) -> Result<()> {
+    query!(
+        "DELETE FROM notes WHERE creator_id = $1 and id = $2",
+        session.id(),
+        id
+    )
+    .execute(&pool)
+    .await
+    .map_err(|_| Error::SQLFail)?;
+    Ok(())
 }

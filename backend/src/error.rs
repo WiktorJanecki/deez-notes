@@ -12,6 +12,7 @@ pub enum Error {
     SQLFail,
     AuthFailMissingCookie,
     AuthFailBadToken,
+    AuthNoAccess,
 }
 
 impl IntoResponse for Error {

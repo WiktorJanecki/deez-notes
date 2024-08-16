@@ -26,6 +26,7 @@ pub struct NoteForCreate {
     pub content: String,
 }
 
+#[derive(Deserialize)]
 pub struct NoteForEdit {
     pub title: Option<String>,
     pub content: Option<String>,
