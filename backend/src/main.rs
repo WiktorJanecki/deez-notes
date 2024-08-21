@@ -3,6 +3,7 @@ use dotenv::dotenv;
 use jwt_simple::prelude::*;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use tower_cookies::CookieManagerLayer;
+use tower_http::cors::CorsLayer;
 
 mod controllers;
 mod error;
@@ -35,8 +36,9 @@ async fn main() {
 
     // routing
     let app = Router::new()
-        .merge(routes::login::routes())
+        .nest("/api", routes::login::routes())
         .nest("/api", routes::notes::routes())
+        .layer(CorsLayer::very_permissive())
         .layer(CookieManagerLayer::new())
         .with_state(state);
 

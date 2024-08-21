@@ -4,8 +4,12 @@ use axum::{
     http::request::Parts,
     RequestPartsExt,
 };
-use jwt_simple::prelude::MACLike;
+use jwt_simple::{
+    common::VerificationOptions,
+    prelude::{Duration, MACLike},
+};
 use tower_cookies::Cookies;
+use tracing::warn;
 
 use crate::{
     error::{Error, Result},
@@ -44,7 +48,13 @@ where
 
         let token_claims = state
             .jwt_key
-            .verify_token::<JWTContent>(token, None)
+            .verify_token::<JWTContent>(
+                token,
+                Some(VerificationOptions {
+                    time_tolerance: Some(Duration::from_hours(2)),
+                    ..Default::default()
+                }),
+            )
             .map_err(|_| Error::AuthFailBadToken)?;
         let session_id = token_claims.custom.id;
         Ok(Session::new(session_id))

@@ -47,9 +47,10 @@ async fn login_post(
     let claims = Claims::with_custom_claims(jwt_content, Duration::from_mins(20));
     let token = jwt_key.authenticate(claims).map_err(|_| Error::LoginFail)?;
 
-    cookies.add(Cookie::new(AUTH_TOKEN, token));
+    cookies.add(Cookie::new(AUTH_TOKEN, token.clone()));
 
     Ok(Json(json!({
-        "success": true
+        "success": true,
+        "token": token
     })))
 }
