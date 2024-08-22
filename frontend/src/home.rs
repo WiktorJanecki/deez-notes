@@ -1,5 +1,6 @@
 use gloo_storage::Storage;
 use leptos::*;
+use serde::Serialize;
 
 use crate::{
     login::AUTH_TOKEN,
@@ -20,6 +21,10 @@ pub fn Home() -> impl IntoView {
         }
     });
 
+    let on_click = |_| {
+        spawn_local(create_new_note());
+    };
+
     move || match login_signal.get() {
         true => view! {<>
             <Await future=fetch_notes let:data>
@@ -30,12 +35,36 @@ pub fn Home() -> impl IntoView {
                     .map(|note| view!{<NoteTitle id=note.id title=note.title.clone()/>})
                     .collect::<Vec<_>>()
                 }
-                <button>Add new note</button>
+                <button on:click={on_click}>Add new note</button>
             </article>
             </Await>
         </>},
         false => view! {<><h3>"Must be logged in"</h3></>},
     }
+}
+
+#[derive(Serialize)]
+struct CreatePayload {
+    title: String,
+    content: String,
+}
+
+async fn create_new_note() {
+    let payload = CreatePayload {
+        title: "New Note".to_owned(),
+        content: "Sample content".to_owned(),
+    };
+    let client = reqwest::Client::new();
+    let res = client
+        .post(format!("{API_PATH}/notes"))
+        .json(&payload)
+        .fetch_credentials_include()
+        .send()
+        .await
+        .expect("API ERROR");
+    let navigate = leptos_router::use_navigate();
+    let id = res.json::<Note>().await.unwrap().id;
+    navigate(&format!("/edit/{id}"), Default::default());
 }
 
 async fn fetch_notes() -> Vec<Note> {
