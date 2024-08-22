@@ -1,21 +1,21 @@
 use crate::API_PATH;
 use gloo_storage::Storage;
 use leptos::*;
-use leptos_dom::logging::console_log;
 use reqwest::*;
 use serde::{Deserialize, Serialize};
 
 pub const AUTH_TOKEN: &str = "AUTH_TOKEN";
 
 #[derive(Serialize)]
-struct LoginPayload {
-    username: String,
-    password: String,
+pub struct LoginPayload {
+    pub username: String,
+    pub password: String,
 }
 #[derive(Deserialize)]
-struct LoginResponse {
-    success: bool,
-    token: String,
+pub struct LoginResponse {
+    #[allow(unused)]
+    pub success: bool,
+    pub token: String,
 }
 #[component]
 pub fn Login() -> impl IntoView {
@@ -70,6 +70,7 @@ pub fn Login() -> impl IntoView {
             <br/>
             <button type="submit">"Submit"</button>
             <p class="err">{move||err.get()}</p>
+            <p>"Don't have an account? "<a href="/register">"Register"</a></p>
         </form>
     }
 }

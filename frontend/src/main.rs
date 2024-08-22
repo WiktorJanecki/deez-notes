@@ -4,11 +4,13 @@ use leptos::*;
 use leptos_router::{Route, Router, Routes};
 use login::Login;
 use note::NoteComponent;
+use register::Register;
 
 mod edit;
 mod home;
 mod login;
 mod note;
+mod register;
 
 const API_PATH: &str = "http://localhost:3000/api";
 
@@ -26,6 +28,7 @@ fn App() -> impl IntoView {
                <Routes>
                   <Route path="/" view=Home/>
                   <Route path="/login" view=Login />
+                  <Route path="/register" view=Register />
                   <Route path="/note/:id" view=NoteComponent />
                   <Route path="/edit/:id" view=EditComponent />
                   <Route path="*any" view= || view!{<h1>"Not found!"</h1>}/>
