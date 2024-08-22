@@ -15,27 +15,13 @@ pub struct Note {
     pub time_edited: i64,
 }
 #[derive(Params, PartialEq)]
-struct NoteParams {
+pub struct NoteParams {
     id: Option<i32>,
 }
 
 #[component]
-pub fn note_title(id: i32, title: String) -> impl IntoView {
-    let on_submit = move |_| {
-        spawn_local(async move {
-            let client = reqwest::Client::new();
-            let _res = client
-                .delete(format!("{API_PATH}/notes/{id}"))
-                .fetch_credentials_include()
-                .send()
-                .await
-                .expect("api error");
-            let navigate = leptos_router::use_navigate();
-            navigate("/login", Default::default());
-            let navigate = leptos_router::use_navigate();
-            navigate("/", Default::default());
-        });
-    };
+pub fn NoteTitle(id: i32, title: String) -> impl IntoView {
+    let on_submit = move |_| spawn_local(delete_note(id));
     view! {
         <div>
             <a href=format!("/note/{id}")><h4>{title}</h4></a>
@@ -43,40 +29,60 @@ pub fn note_title(id: i32, title: String) -> impl IntoView {
         </div>
     }
 }
+
 #[component]
 pub fn NoteComponent() -> impl IntoView {
-    let title = create_rw_signal(String::from(""));
-    let content = create_rw_signal(String::from(""));
     let id = create_rw_signal(0_i32);
-
     let params = use_params_map();
-    spawn_local(async move {
-        let pid = params.with(|params| params.get("id").expect("invalid params").clone());
-        let client = reqwest::Client::new();
-        let res = client
-            .get(format!("{API_PATH}/notes/{pid}"))
-            .fetch_credentials_include()
-            .send()
-            .await
-            .expect("api error")
-            .json::<Note>()
-            .await
-            .unwrap();
-        title.set(res.title);
-        content.set(res.content);
-        id.set(res.id);
-    });
+
+    let on_back = move |_| {
+        let navigate = leptos_router::use_navigate();
+        navigate("/", Default::default());
+    };
+    let on_edit = move |_| {
+        let navigate = leptos_router::use_navigate();
+        let id = id.get();
+        navigate(&format!("/edit/{id}"), Default::default());
+    };
 
     view! {
         <article>
-            <h2>{move||title.get()}</h2>
-            <p>{move||content.get()}</p>
-            <button>edit</button>
-            <button on:click={move|ev: ev::MouseEvent|{
-                let navigate = leptos_router::use_navigate();
-                navigate("/", Default::default());
-                }
-            }>back</button>
+            <Await future=move||load_note_data(params,id) let:data >
+                <h2>{data.title.to_string()}</h2>
+                <p>{data.content.to_string()}</p>
+                <button on:click=on_back>back</button>
+                <button on:click=on_edit>edit</button>
+            </Await>
         </article>
     }
+}
+
+async fn delete_note(id: i32) {
+    let client = reqwest::Client::new();
+    let _res = client
+        .delete(format!("{API_PATH}/notes/{id}"))
+        .fetch_credentials_include()
+        .send()
+        .await
+        .expect("api error");
+    let navigate = leptos_router::use_navigate();
+    // TODO: this rerenders home view twice, to fix that make home view data a resource and refetch it
+    navigate("/login", Default::default());
+    navigate("/", Default::default());
+}
+
+pub async fn load_note_data(params: Memo<ParamsMap>, id: RwSignal<i32>) -> Note {
+    let pid = params.with(|params| params.get("id").expect("invalid params").clone());
+    let client = reqwest::Client::new();
+    let res = client
+        .get(format!("{API_PATH}/notes/{pid}"))
+        .fetch_credentials_include()
+        .send()
+        .await
+        .expect("api error")
+        .json::<Note>()
+        .await
+        .unwrap();
+    id.set(res.id);
+    res
 }

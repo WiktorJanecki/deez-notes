@@ -1,9 +1,11 @@
+use edit::EditComponent;
 use home::Home;
 use leptos::*;
 use leptos_router::{Route, Router, Routes};
 use login::Login;
 use note::NoteComponent;
 
+mod edit;
 mod home;
 mod login;
 mod note;
@@ -25,6 +27,7 @@ fn App() -> impl IntoView {
                   <Route path="/" view=Home/>
                   <Route path="/login" view=Login />
                   <Route path="/note/:id" view=NoteComponent />
+                  <Route path="/edit/:id" view=EditComponent />
                   <Route path="*any" view= || view!{<h1>"Not found!"</h1>}/>
                </Routes>
             </Router>

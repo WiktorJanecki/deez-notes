@@ -10,41 +10,41 @@ use crate::{
 #[component]
 pub fn Home() -> impl IntoView {
     let login_signal = expect_context::<RwSignal<bool>>();
-    let token_signal: RwSignal<Option<String>> = create_rw_signal(None);
-    let notes_signal: RwSignal<Vec<Note>> = create_rw_signal(vec![]);
+
+    // run at start
     create_effect(move |_| {
         let token = gloo_storage::LocalStorage::get::<String>(AUTH_TOKEN).ok();
-        token_signal.set(token.clone());
+        // TODO: check on server if token is still valid
         if token.is_some() {
             login_signal.set(true);
         }
     });
 
-    spawn_local(async move {
-        let client = reqwest::Client::new();
-        let res = client
-            .get(format!("{API_PATH}/notes"))
-            .fetch_credentials_include()
-            .send()
-            .await
-            .expect("API ERROR");
-        let notes = res.json::<Vec<Note>>().await.expect("API ERR");
-        notes_signal.set(notes);
-    });
-
     move || match login_signal.get() {
         true => view! {<>
+            <Await future=fetch_notes let:data>
             <h3>"Notes: "</h3>
             <article>
-                {move||{
-                    let notes = notes_signal.get();
-                    notes.iter().map(|note|{
-                        view!{<NoteTitle id=note.id title=note.title.clone() />}
-                    }).collect::<Vec<_>>()
-                }}
+                {
+                    data.iter()
+                    .map(|note| view!{<NoteTitle id=note.id title=note.title.clone()/>})
+                    .collect::<Vec<_>>()
+                }
                 <button>Add new note</button>
             </article>
+            </Await>
         </>},
         false => view! {<><h3>"Must be logged in"</h3></>},
     }
+}
+
+async fn fetch_notes() -> Vec<Note> {
+    let client = reqwest::Client::new();
+    let res = client
+        .get(format!("{API_PATH}/notes"))
+        .fetch_credentials_include()
+        .send()
+        .await
+        .expect("API ERROR");
+    res.json::<Vec<Note>>().await.expect("API ERR")
 }
