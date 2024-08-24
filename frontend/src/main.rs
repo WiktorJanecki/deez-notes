@@ -1,29 +1,45 @@
 use edit::EditComponent;
 use home::Home;
 use leptos::*;
-use leptos_router::{Route, Router, Routes};
+use leptos_router::{use_location, Route, Router, Routes};
 use login::Login;
+use nav::Navigation;
 use note::NoteComponent;
 use register::Register;
 
 mod edit;
 mod home;
 mod login;
+mod nav;
 mod note;
 mod register;
 
 const API_PATH: &str = "http://localhost:3000/api";
 
+#[derive(Copy, Clone)]
+pub struct Context {
+    pub login_signal: RwSignal<bool>,
+    pub error_signal: RwSignal<String>,
+}
+
 #[component]
 fn App() -> impl IntoView {
     let login_signal = create_rw_signal(false);
-    provide_context(login_signal);
+    let error_signal = create_rw_signal(String::from(""));
+
+    provide_context(Context {
+        login_signal,
+        error_signal,
+    });
+
+    create_effect(move |_| {
+        let _ = use_location().pathname.get(); // makes effect run every path change
+        error_signal.set("".to_owned());
+    });
+
     view! {
         <main>
-            <nav class="">
-               <a href="/">"Home"</a>
-               <a href="/login">"Login"</a>
-            </nav>
+            <Navigation />
             <Router>
                <Routes>
                   <Route path="/" view=Home/>
@@ -34,6 +50,7 @@ fn App() -> impl IntoView {
                   <Route path="*any" view= || view!{<h1>"Not found!"</h1>}/>
                </Routes>
             </Router>
+            <p class="err">{move||error_signal.get()}</p>
         </main>
     }
 }

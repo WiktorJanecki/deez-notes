@@ -1,27 +1,67 @@
 use crate::login::{LoginPayload, LoginResponse, AUTH_TOKEN};
-use crate::API_PATH;
+use crate::{Context, API_PATH};
+use anyhow::{bail, Ok, Result};
 use gloo_storage::Storage;
 use leptos::*;
 use reqwest::StatusCode;
 
-async fn register(
-    username: ReadSignal<String>,
-    password: ReadSignal<String>,
-    login_signal: RwSignal<bool>,
-    err_signal: RwSignal<String>,
-) {
-    let payload = LoginPayload {
-        username: username.get(),
-        password: password.get(),
+#[component]
+pub fn Register() -> impl IntoView {
+    let ctx = expect_context::<Context>();
+    let login_signal = ctx.login_signal;
+    let err_signal = ctx.error_signal;
+    let username = create_rw_signal(String::from(""));
+    let password = create_rw_signal(String::from(""));
+
+    let on_submit = move |ev: leptos::ev::SubmitEvent| {
+        ev.prevent_default();
+        err_signal.set(String::from(""));
+        spawn_local(register_safe(
+            username.get(),
+            password.get(),
+            login_signal,
+            err_signal,
+        ));
     };
+
+    let on_input = move |ev, signal: RwSignal<String>| {
+        signal.set(event_target_value(&ev));
+        err_signal.set("".to_owned());
+    };
+
+    view! {
+        <form on:submit=on_submit>
+            <label for="login">"Login: "</label>
+            <input on:input=move|ev|{on_input(ev,username)} required  id="login" name="login"/>
+            <br/>
+            <label for="password">"Password: "</label>
+            <input on:input=move|ev|{on_input(ev,password)} name="password" id="password" required type="password"/>
+            <br/>
+            <button type="submit">"Submit"</button>
+        </form>
+    }
+}
+
+async fn register_safe(
+    username: String,
+    password: String,
+    login_signal: RwSignal<bool>,
+    error_signal: RwSignal<String>,
+) {
+    if let Err(e) = register(username, password, login_signal).await {
+        error_signal.set(e.to_string());
+    }
+}
+
+async fn register(username: String, password: String, login_signal: RwSignal<bool>) -> Result<()> {
+    let payload = LoginPayload { username, password };
     let client = reqwest::Client::new();
     let res = client
         .post(format!("{API_PATH}/register"))
         .json(&payload)
         .fetch_credentials_include()
         .send()
-        .await
-        .expect("API SHOULD BE ALIVE TODO: HANDLE THIS ERR");
+        .await?;
     let status = res.status();
     match status {
         StatusCode::OK => {
@@ -32,38 +72,9 @@ async fn register(
             login_signal.set(true);
         }
         _ => {
-            let e = res.text().await.unwrap();
-            err_signal.set(e);
+            let e = res.text().await?;
+            bail!(e);
         }
     };
-}
-
-#[component]
-pub fn Register() -> impl IntoView {
-    let (name, set_name) = create_signal(String::new());
-    let (pass, set_pass) = create_signal(String::new());
-    let err_signal = create_rw_signal(String::from(""));
-    let login_signal = expect_context::<RwSignal<bool>>();
-    let on_submit = move |ev: leptos::ev::SubmitEvent| {
-        ev.prevent_default();
-        spawn_local(register(name, pass, login_signal, err_signal));
-    };
-    view! {
-        <form on:submit=on_submit>
-            <label for="login">"Login: "</label>
-            <input on:input=move|ev|{
-                set_name.set(event_target_value(&ev));
-                err_signal.set(String::from(""));
-            } required  id="login" name="login" value=name/>
-            <br/>
-            <label for="password">"Password: "</label>
-            <input on:input=move|ev|{
-                set_pass.set(event_target_value(&ev));
-                err_signal.set(String::from(""));
-            } name="password" id="password" value=pass required type="password"/>
-            <br/>
-            <button type="submit">"Submit"</button>
-            <p class="err">{move||err_signal.get()}</p>
-        </form>
-    }
+    Ok(())
 }

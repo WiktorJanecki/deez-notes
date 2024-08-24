@@ -1,4 +1,5 @@
-use crate::API_PATH;
+use crate::{Context, API_PATH};
+use anyhow::{bail, Ok, Result};
 use gloo_storage::Storage;
 use leptos::*;
 use reqwest::*;
@@ -19,58 +20,76 @@ pub struct LoginResponse {
 }
 #[component]
 pub fn Login() -> impl IntoView {
-    let (err, set_err) = create_signal(String::new());
-    let (name, set_name) = create_signal(String::new());
-    let (pass, set_pass) = create_signal(String::new());
-    let login_signal = expect_context::<RwSignal<bool>>();
+    let ctx = expect_context::<Context>();
+    let login_signal = ctx.login_signal;
+    let error_signal = ctx.error_signal;
+    let username = create_rw_signal(String::from(""));
+    let password = create_rw_signal(String::from(""));
+
     let on_submit = move |ev: leptos::ev::SubmitEvent| {
         ev.prevent_default();
+        error_signal.set(String::from(""));
         spawn_local(async move {
-            let payload = LoginPayload {
-                username: name.get_untracked(),
-                password: pass.get_untracked(),
-            };
-            let client = reqwest::Client::new();
-            let res = client
-                .post(format!("{API_PATH}/login"))
-                .json(&payload)
-                .fetch_credentials_include()
-                .send()
-                .await
-                .expect("API SHOULD BE ALIVE TODO: HANDLE THIS ERR");
-            let status = res.status();
-            match status {
-                StatusCode::OK => {
-                    let token = res.json::<LoginResponse>().await.unwrap();
-                    gloo_storage::LocalStorage::set(AUTH_TOKEN, token.token).unwrap();
-                    let navigate = leptos_router::use_navigate();
-                    navigate("/", Default::default());
-                    login_signal.set(true);
-                }
-                _ => {
-                    let e = res.text().await.unwrap();
-                    set_err.set(e);
-                }
-            };
+            fetch_login_safe(username.get(), password.get(), login_signal, error_signal).await;
         });
     };
+    let on_input = move |ev, signal: RwSignal<String>| {
+        signal.set(event_target_value(&ev));
+        error_signal.set(String::from(""));
+    };
+
     view! {
         <form on:submit=on_submit>
             <label for="login">"Login: "</label>
-            <input on:input=move|ev|{
-                set_name.set(event_target_value(&ev));
-                set_err.set(String::from(""));
-            } required  id="login" name="login" value=name/>
+            <input on:input=move|ev|{on_input(ev,username)} required  id="login" name="login"/>
             <br/>
             <label for="password">"Password: "</label>
-            <input on:input=move|ev|{
-                set_pass.set(event_target_value(&ev));
-                set_err.set(String::from(""));
-            } name="password" id="password" value=pass required type="password"/>
+            <input on:input=move|ev|{on_input(ev,password)} name="password" id="password" required type="password"/>
             <br/>
             <button type="submit">"Submit"</button>
-            <p class="err">{move||err.get()}</p>
             <p>"Don't have an account? "<a href="/register">"Register"</a></p>
         </form>
     }
+}
+
+async fn fetch_login_safe(
+    username: String,
+    password: String,
+    login_signal: RwSignal<bool>,
+    error_signal: RwSignal<String>,
+) {
+    let result = fetch_login(username, password, login_signal).await;
+    if let Err(err) = result {
+        error_signal.set(err.to_string());
+    }
+}
+
+async fn fetch_login(
+    username: String,
+    password: String,
+    login_signal: RwSignal<bool>,
+) -> Result<()> {
+    let payload = LoginPayload { username, password };
+    let client = reqwest::Client::new();
+    let res = client
+        .post(format!("{API_PATH}/login"))
+        .json(&payload)
+        .fetch_credentials_include()
+        .send()
+        .await?;
+    let status = res.status();
+    match status {
+        StatusCode::OK => {
+            let token = res.json::<LoginResponse>().await.unwrap();
+            gloo_storage::LocalStorage::set(AUTH_TOKEN, token.token).unwrap();
+            login_signal.set(true);
+            let navigate = leptos_router::use_navigate();
+            navigate("/", Default::default());
+        }
+        _ => {
+            let error_message = res.text().await?;
+            bail!(error_message);
+        }
+    };
+    Ok(())
 }
