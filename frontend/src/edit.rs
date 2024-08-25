@@ -68,7 +68,7 @@ async fn fetch_edit(id: i32, new_title: String, new_content: String) -> anyhow::
     };
     let client = reqwest::Client::new();
     let res = client
-        .put(format!("{API_PATH}/notes/{id}"))
+        .put(format!("{}/notes/{id}", *API_PATH))
         .json(&payload)
         .fetch_credentials_include()
         .send()

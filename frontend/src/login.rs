@@ -74,7 +74,7 @@ async fn fetch_login(
     let payload = LoginPayload { username, password };
     let client = reqwest::Client::new();
     let res = client
-        .post(format!("{API_PATH}/login"))
+        .post(format!("{}/login", *API_PATH))
         .json(&payload)
         .fetch_credentials_include()
         .send()

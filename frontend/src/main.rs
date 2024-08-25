@@ -1,5 +1,7 @@
+extern crate dotenv;
 use edit::EditComponent;
 use home::Home;
+use lazy_static::lazy_static;
 use leptos::*;
 use leptos_router::{use_location, Route, Router, Routes};
 use login::Login;
@@ -14,7 +16,9 @@ mod nav;
 mod note;
 mod register;
 
-const API_PATH: &str = "http://localhost:3000/api";
+lazy_static! {
+    pub static ref API_PATH: &'static str = std::env!("API_PATH");
+}
 
 #[derive(Copy, Clone)]
 pub struct Context {

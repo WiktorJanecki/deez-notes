@@ -65,7 +65,7 @@ async fn fetch_new_note() -> Result<()> {
     };
     let client = reqwest::Client::new();
     let res = client
-        .post(format!("{API_PATH}/notes"))
+        .post(format!("{}/notes", *API_PATH))
         .json(&payload)
         .fetch_credentials_include()
         .send()
@@ -93,7 +93,7 @@ async fn fetch_notes_safe(error_signal: RwSignal<String>) -> Vec<Note> {
 async fn fetch_notes() -> Result<Vec<Note>> {
     let client = reqwest::Client::new();
     let res = client
-        .get(format!("{API_PATH}/notes"))
+        .get(format!("{}/notes", *API_PATH))
         .fetch_credentials_include()
         .send()
         .await?;

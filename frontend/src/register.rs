@@ -59,7 +59,7 @@ async fn register(username: String, password: String, login_signal: RwSignal<boo
     let payload = LoginPayload { username, password };
     let client = reqwest::Client::new();
     let res = client
-        .post(format!("{API_PATH}/register"))
+        .post(format!("{}/register", *API_PATH))
         .json(&payload)
         .fetch_credentials_include()
         .send()

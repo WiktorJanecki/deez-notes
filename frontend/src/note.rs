@@ -75,7 +75,7 @@ async fn delete_note_safe(id: i32, error_signal: RwSignal<String>) {
 async fn delete_note(id: i32) -> anyhow::Result<()> {
     let client = reqwest::Client::new();
     let res = client
-        .delete(format!("{API_PATH}/notes/{id}"))
+        .delete(format!("{}/notes/{id}", *API_PATH))
         .fetch_credentials_include()
         .send()
         .await?;
@@ -108,7 +108,7 @@ pub async fn load_note_data(params: Memo<ParamsMap>, id: RwSignal<i32>) -> anyho
     let pid = params.with(|params| params.get("id").expect("invalid params").clone());
     let client = reqwest::Client::new();
     let res = client
-        .get(format!("{API_PATH}/notes/{pid}"))
+        .get(format!("{}/notes/{pid}", *API_PATH))
         .fetch_credentials_include()
         .send()
         .await?;
