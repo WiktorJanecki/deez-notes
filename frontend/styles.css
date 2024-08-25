@@ -1,16 +1,128 @@
-*{
- font-size: 60px;
+.first-color { 
+	background: #ececec; 
 }
+	
+.second-color { 
+	background: #9fd3c7; 
+}
+
+.third-color { 
+	background: #385170; 
+}
+
+.fourth-color { 
+	background: #142d4c; 
+}
+*{
+ box-sizing: border-box;
+}
+
+body{
+ margin:0px;
+ padding:0px;
+ background: #121212;
+ font-size: 25px;
+ font-family: "Roboto", sans-serif;
+ font-weight: 400;
+ width:100%;
+ font-style: normal;
+ color: #ececec;
+}
+
 nav {
  display:flex;
- width:100vw;
+ width:100%;
  justify-content:center;
+
 }
 nav > a{
- padding:0 30px 0 30px;
- color:black;
+ padding:10px 30px 10px 30px;
  text-decoration: none;
+}
+a {
+  color: #ececec;
 }
 .err{
  color:red;
+}
+
+
+main{
+ width:100%;
+ margin:0px;
+ padding:0px;
+ display: flex;
+ justify-content:center;
+ align-items: center;
+ flex-direction:column;
+}
+
+main > form {
+ margin:0px;
+ margin-top: 100px;
+ padding:0px;
+ width:90vw;
+ max-width:400px
+}
+main > form > label{
+ margin:5px;
+}
+main > form > p{
+ margin:5px;
+ margin-top:10px;
+}
+input {
+ width:100%;
+ height: 30px;
+ font-size: 20px;
+ margin: 5px;
+ margin-bottom:15px;
+ border-radius: 5px;
+ padding:5px;
+}
+textarea{
+ margin:5px;
+}
+main > form > button{
+ margin:5px;
+}
+article{
+ padding:10px;
+}
+button {
+ font-size: 20px;
+ padding: 5px;
+ margin-top:15px;
+ margin-right:10px;
+ background: white; 
+ border:none;
+ border-radius:5px
+}
+.noteTitle{
+ display:flex;
+ align-items: center;
+}
+.noteTitle > button{
+ margin:0px;
+ padding:5px;
+ margin-left:10px;
+ height:30px;
+}
+main > article {
+ margin:0px;
+ padding:0px;
+ max-width:400px
+}
+main > article > textarea{
+ width:100%;
+ height:40vh;
+ font-size:18px;
+ margin:0px;
+}
+main >article>input{
+ margin-left:0px;
+ margin-top:100px;
+}
+.editarticle{
+ width:90vw;
 }

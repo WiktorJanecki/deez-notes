@@ -32,9 +32,11 @@ pub fn Register() -> impl IntoView {
     view! {
         <form on:submit=on_submit>
             <label for="login">"Login: "</label>
+            <br/>
             <input on:input=move|ev|{on_input(ev,username)} required  id="login" name="login"/>
             <br/>
             <label for="password">"Password: "</label>
+            <br/>
             <input on:input=move|ev|{on_input(ev,password)} name="password" id="password" required type="password"/>
             <br/>
             <button type="submit">"Submit"</button>

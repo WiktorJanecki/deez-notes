@@ -24,7 +24,7 @@ pub fn NoteTitle(id: i32, title: String) -> impl IntoView {
     let Context { error_signal, .. } = expect_context::<Context>();
     let on_submit = move |_| spawn_local(delete_note_safe(id, error_signal));
     view! {
-        <div>
+        <div class="noteTitle">
             <a href=format!("/note/{id}")><h4>{title}</h4></a>
             <button on:click={on_submit}>X</button>
         </div>

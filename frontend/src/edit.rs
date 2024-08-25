@@ -30,7 +30,7 @@ pub fn EditComponent() -> impl IntoView {
     };
 
     view! {
-        <article>
+        <article class="editarticle">
             <Await future=move||fetch_get_safe(params,id,title,content,error_signal) let:_>
                 <input on:input=move|e|{on_input(e,title)} value={title} />
                 <br/>

@@ -38,8 +38,8 @@ fn App() -> impl IntoView {
     });
 
     view! {
+        <Navigation />
         <main>
-            <Navigation />
             <Router>
                <Routes>
                   <Route path="/" view=Home/>
